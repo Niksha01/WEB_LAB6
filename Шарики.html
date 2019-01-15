@@ -1,0 +1,234 @@
+<html>
+<head>
+	<title>Canvas & Mootools</title>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mootools/1.6.0/mootools-core.js"></script>
+	<script type="text/javascript">
+		var canvas, ctx, balls, idTimer, vector, a;
+		const max_size = 50;
+		TFigure = new Class({
+			initialize: function(pX,pY) {
+				this.posX = pX; //позиция шарика по X
+				this.posY = pY; //позиция шарика по Y
+				//цвет шарика, формируется случайным образом
+				this.colBall = 'rgb('+Math.floor(Math.random()*256)+','
+				+Math.floor(Math.random()*256)+','+Math.floor(Math.random()*256)+')';
+				this.rBall = 1;
+				this.kuda = 0;
+			},
+			posX: 0,
+			posY: 0,
+			colBall:"rgb(0,0,0)",
+			rBall: 0,
+			colorBall: function(ctx){
+				// формируем градиентную заливку для шарика
+				with (this){
+					var gradient = ctx.createRadialGradient(posX+rBall/4,
+					posY-rBall/6, rBall/8, posX, posY, rBall);
+					gradient.addColorStop(0, '#fff');
+					gradient.addColorStop(0.85, colBall);
+					return gradient;
+				}
+			}
+		});
+			
+			
+		TBall = new Class({
+				Extends: TFigure,
+			draw : function(ctx){
+				// рисуем шарик на canvas
+				with (this){
+					ctx.fillStyle = colorBall(ctx);
+					ctx.beginPath();
+					ctx.arc(posX, posY, rBall, 0, 2*Math.PI, false);
+					ctx.closePath();
+					ctx.fill();
+				}
+			}
+		});
+		TNeBall = new Class({
+				Extends: TFigure,
+			draw : function(ctx){
+				// рисуем не шарик на canvas
+				with (this){
+					ctx.fillStyle = colorBall(ctx);
+					ctx.beginPath();
+					ctx.moveTo(posX - rBall / 2, posY - rBall / 2)
+					ctx.lineTo(posX + rBall / 2, posY - rBall / 2)
+					ctx.lineTo(posX + rBall / 2, posY + rBall / 2)
+					ctx.lineTo(posX - rBall / 2, posY + rBall / 2)
+					ctx.lineTo(posX - rBall / 2, posY - rBall / 2)
+					ctx.closePath();
+					ctx.fill();
+				}
+			},
+			color: function(ctx){
+				// формируем градиентную заливку для шарика
+				with (this){
+					var gradient = ctx.createLinearGradient(posX - rBall/2, posY - rBall/2, 
+															posX + rBall/2, posY + rBall/2);
+					gradient.addColorStop(0, '#fff');
+					gradient.addColorStop(0.85, colFig);
+					return gradient;
+				}
+			},
+		});
+		TSovsemNeBall = new Class({
+				Extends: TFigure,
+			draw : function(ctx){
+				// рисуем не шарик на canvas
+				with (this){
+					ctx.fillStyle = colorBall(ctx);
+					ctx.beginPath();
+					ctx.moveTo(posX - rBall / 2, posY - rBall / 2)
+					ctx.lineTo(posX + rBall / 2, posY - rBall / 2)
+					ctx.lineTo(posX + rBall / 2, posY + rBall / 2)
+					ctx.closePath();
+					ctx.fill();
+				}
+			},
+			color: function(ctx){
+				// формируем градиентную заливку для шарика
+				with (this){
+					var gradient = ctx.createLinearGradient(posX - rBall/2, posY - rBall/2, 
+															posX + rBall/2, posY + rBall/2);
+					gradient.addColorStop(0, '#fff');
+					gradient.addColorStop(0.85, colFig);
+					return gradient;
+				}
+			},
+		});
+		
+		
+		
+		
+		function drawBack(ctx,col1,col2,w,h){
+			// закрашиваем канвас градиентным фоном
+			ctx.save();
+			var g = ctx.createLinearGradient(0,0,0,h);
+			g.addColorStop(1,col1);
+			g.addColorStop(0,col2);
+			ctx.fillStyle = g;
+			ctx.fillRect(0,0,w,h);
+			ctx.restore();
+		}
+		
+		function ban(){
+			drawBack(ctx,'#202020','#aaa',canvas.width,canvas.height);
+			for (var k = 0; k < balls.length; k){
+				balls[k].draw(ctx);
+				balls[k].rBall = balls[k].rBall + 1;
+				if (balls[k].rBall > max_size){
+					balls[k].rBall = 0;
+					balls.splice(k, 1)
+				}else{
+					k++
+				}	
+			}
+		}
+		
+		// инициализация работы
+		function init(){
+			canvas = document.getElementById('canvas');
+			if (canvas.getContext){
+				ctx = canvas.getContext('2d');
+				//рисуем фон
+				drawBack(ctx,'#202020','#aaa',canvas.width,canvas.height);
+				//создаем 10 шариков, заноси их в массив и выводим на canvas
+				balls = [];
+				for (var i = 1; i<=10;i++){
+					var item = new TBall(10+Math.random()*(canvas.width-30),
+					10+Math.random()*(canvas.height-30));
+					item.draw(ctx);
+					balls.push(item);
+				}
+			}
+			expandTimer = setInterval('ban()', 100)
+		}
+		// создаем новый шарик по щелчку мыши, добавляем его в массив шариков и рисуем его
+		function goInput(event){
+			var x = event.clientX;
+			var y = event.clientY;
+			var k;
+			k = Math.floor(Math.random() * (4 - 1) + 1);
+			if (k == 1){
+				var item = new TNeBall(x,y);
+			}else if (k == 2){
+				var item = new TBall(x,y);
+			}else if (k == 3){
+				var item = new TSovsemNeBall(x,y);
+			}
+			item.draw(ctx);
+			balls.push(item);
+			//movevector(vector);
+		}
+		function move(){
+			//реализация движения шариков, находящихся в массиве balls
+			drawBack(ctx,'#202020','#aaa',canvas.width,canvas.height);
+			
+			
+			for (var i = 0; i < balls.length; i){
+				if (vector == 6){
+					for (var j = 0; j < balls.length; j++){
+						balls[j].kuda = Math.floor(Math.random() * (4 - 0) + 1);
+					}
+				}
+								
+				if ((vector == 1) || (balls[i].kuda == 1)){
+					balls[i].posX = balls[i].posX + (Math.random()*4-2);
+					balls[i].posY = balls[i].posY + (Math.random()*2-4);
+				}else
+				if ((vector == 2) || (balls[i].kuda == 2)){
+					balls[i].posX = balls[i].posX + (Math.random()*4-2);
+					balls[i].posY = balls[i].posY + (Math.random()*2+4)/1.5;
+				}else
+				if ((vector == 3) || (balls[i].kuda == 3)){
+					balls[i].posX = balls[i].posX + (Math.random()*2-4);
+					balls[i].posY = balls[i].posY + (Math.random()*4-2);
+				}else
+				if ((vector == 4) || (balls[i].kuda == 4)){
+					balls[i].posX = balls[i].posX + (Math.random()*2+4)/1.5;
+					balls[i].posY = balls[i].posY + (Math.random()*4-2);
+				}else{
+					if (balls[i].kuda == 0){
+						balls[i].kuda = Math.floor(Math.random() * (4 - 0) + 1);
+					}
+				}
+				balls[i].draw(ctx);
+				if ((balls[i].posX > canvas.width)||(balls[i].posX < 0) ||(balls[i].posY < 0) || (balls[i].posY > canvas.height)) {
+					balls.splice(i,1);
+				}
+				else 
+					i++;
+			}
+		}
+		function movevector(a){
+			clearInterval(idTimer)
+			//balls.kuda = a;
+			vector = a;
+			if (a == 5){
+				for (var i = 0; i < balls.length; i++){
+					balls[i].kuda = Math.floor(Math.random() * (4 - 0) + 1);
+					//idTimer = setInterval('move(56);',50);
+				}
+			}  
+				idTimer = setInterval('move();',50);
+		}
+	</script>
+	<style type="text/css">
+		canvas { border: 1px solid blue; }
+	</style>
+</head>
+<body onload="init();">
+	<canvas id="canvas" width="600" height="400" onclick="goInput(event);">
+	</canvas>
+	<form>
+		<input type = "button" value = "Движение вверх" onclick="movevector(1)">
+		<input type = "button" value = "Движение вниз" onclick="movevector(2)">
+		<input type = "button" value = "Движение влево" onclick="movevector(3)">
+		<input type = "button" value = "Движение вправо" onclick="movevector(4)">
+		<input type = "button" value = "На встречу к смерти" onclick="movevector(5)">
+		<input type = "button" value = "Эпилепсия" onclick="movevector(6)">
+		<input type = "button" value = "Стоп" onclick="clearInterval(idTimer);">
+	</form>
+</body>
+</html>
